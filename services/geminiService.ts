@@ -1,7 +1,12 @@
 
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
-const apiKey = process.env.API_KEY || '';
+// Vite exposes VITE_-prefixed vars on import.meta.env in both dev and build.
+// The process.env fallback keeps the define() in vite.config.ts working.
+const apiKey =
+    import.meta.env?.VITE_GEMINI_API_KEY ||
+    (typeof process !== 'undefined' ? process.env?.API_KEY : '') ||
+    '';
 
 // Initialize client securely. 
 // Note: In a real production app, never expose keys in client-side code without proxy or strict restrictions.
