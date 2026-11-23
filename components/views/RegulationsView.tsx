@@ -1,11 +1,12 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, Globe, ChevronRight, ArrowLeft, Info, CheckCircle2, Activity, Eye, Zap, TrendingUp, Calendar, DollarSign, FileCheck, Landmark, Briefcase, ChevronDown } from 'lucide-react';
-import { UserData } from '../../types';
+import { UserData, Transaction } from '../../types';
 
 interface RegulationsViewProps {
     userData?: UserData;
     onAskAgent?: (query: string) => void;
+    transactions?: Transaction[];
 }
 
 interface Regulation {
@@ -34,36 +35,37 @@ interface TaxInfo {
     currency: string;
     vatLabel: string;
     vatRate: number;
+    exchangeRateToUSD: number; // For basic conversion estimation
 }
 
 // Comprehensive Tax Intelligence Map
 const TAX_INTELLIGENCE: Record<string, TaxInfo> = {
-    'United States': { federalRate: 21, bracketName: 'Federal Corporate', filingDeadline: 'Apr 15', currency: '$', vatLabel: 'Sales Tax (Avg)', vatRate: 6.35 },
-    'United Kingdom': { federalRate: 25, bracketName: 'Corporation Tax', filingDeadline: '12m after Y.E.', currency: '£', vatLabel: 'VAT', vatRate: 20 },
-    'Canada': { federalRate: 26.5, bracketName: 'Fed + Prov Combined', filingDeadline: 'Jun 30', currency: 'C$', vatLabel: 'GST/HST', vatRate: 13 },
-    'Germany': { federalRate: 29.8, bracketName: 'Körperschaftsteuer', filingDeadline: 'Jul 31', currency: '€', vatLabel: 'VAT (MwSt)', vatRate: 19 },
-    'France': { federalRate: 25, bracketName: 'Impôt sur les Sociétés', filingDeadline: 'May 15', currency: '€', vatLabel: 'TVA', vatRate: 20 },
-    'Australia': { federalRate: 30, bracketName: 'Company Tax', filingDeadline: 'May 15', currency: 'A$', vatLabel: 'GST', vatRate: 10 },
-    'Brazil': { federalRate: 34, bracketName: 'IRPJ + CSLL', filingDeadline: 'Mar 31', currency: 'R$', vatLabel: 'ICMS (Avg)', vatRate: 17 },
-    'India': { federalRate: 25, bracketName: 'Corporate Tax', filingDeadline: 'Oct 31', currency: '₹', vatLabel: 'GST', vatRate: 18 },
-    'China': { federalRate: 25, bracketName: 'Enterprise Income Tax', filingDeadline: 'May 31', currency: '¥', vatLabel: 'VAT', vatRate: 13 },
-    'Japan': { federalRate: 23.2, bracketName: 'Corporate Tax', filingDeadline: '2m after Y.E.', currency: '¥', vatLabel: 'Consumption Tax', vatRate: 10 },
-    'Singapore': { federalRate: 17, bracketName: 'Corporate Income Tax', filingDeadline: 'Nov 30', currency: 'S$', vatLabel: 'GST', vatRate: 9 },
-    'United Arab Emirates': { federalRate: 9, bracketName: 'Corporate Tax', filingDeadline: '9m after Y.E.', currency: 'AED', vatLabel: 'VAT', vatRate: 5 },
-    'South Africa': { federalRate: 27, bracketName: 'CIT', filingDeadline: '12m after Y.E.', currency: 'R', vatLabel: 'VAT', vatRate: 15 },
-    'Mexico': { federalRate: 30, bracketName: 'ISR', filingDeadline: 'Mar 31', currency: 'MX$', vatLabel: 'IVA', vatRate: 16 },
-    'Nigeria': { federalRate: 30, bracketName: 'CIT', filingDeadline: 'Jun 30', currency: '₦', vatLabel: 'VAT', vatRate: 7.5 },
-    'Default': { federalRate: 20, bracketName: 'Standard Corporate', filingDeadline: 'Dec 31', currency: '$', vatLabel: 'VAT/GST', vatRate: 15 }
+    'United States': { federalRate: 21, bracketName: 'Federal Corporate', filingDeadline: 'Apr 15', currency: '$', vatLabel: 'Sales Tax (Avg)', vatRate: 6.35, exchangeRateToUSD: 1 },
+    'United Kingdom': { federalRate: 25, bracketName: 'Corporation Tax', filingDeadline: '12m after Y.E.', currency: '£', vatLabel: 'VAT', vatRate: 20, exchangeRateToUSD: 1.27 },
+    'Canada': { federalRate: 26.5, bracketName: 'Fed + Prov Combined', filingDeadline: 'Jun 30', currency: 'C$', vatLabel: 'GST/HST', vatRate: 13, exchangeRateToUSD: 0.74 },
+    'Germany': { federalRate: 29.8, bracketName: 'Körperschaftsteuer', filingDeadline: 'Jul 31', currency: '€', vatLabel: 'VAT (MwSt)', vatRate: 19, exchangeRateToUSD: 1.09 },
+    'France': { federalRate: 25, bracketName: 'Impôt sur les Sociétés', filingDeadline: 'May 15', currency: '€', vatLabel: 'TVA', vatRate: 20, exchangeRateToUSD: 1.09 },
+    'Australia': { federalRate: 30, bracketName: 'Company Tax', filingDeadline: 'May 15', currency: 'A$', vatLabel: 'GST', vatRate: 10, exchangeRateToUSD: 0.66 },
+    'Brazil': { federalRate: 34, bracketName: 'IRPJ + CSLL', filingDeadline: 'Mar 31', currency: 'R$', vatLabel: 'ICMS (Avg)', vatRate: 17, exchangeRateToUSD: 0.20 },
+    'India': { federalRate: 25, bracketName: 'Corporate Tax', filingDeadline: 'Oct 31', currency: '₹', vatLabel: 'GST', vatRate: 18, exchangeRateToUSD: 0.012 },
+    'China': { federalRate: 25, bracketName: 'Enterprise Income Tax', filingDeadline: 'May 31', currency: '¥', vatLabel: 'VAT', vatRate: 13, exchangeRateToUSD: 0.14 },
+    'Japan': { federalRate: 23.2, bracketName: 'Corporate Tax', filingDeadline: '2m after Y.E.', currency: '¥', vatLabel: 'Consumption Tax', vatRate: 10, exchangeRateToUSD: 0.0068 },
+    'Singapore': { federalRate: 17, bracketName: 'Corporate Income Tax', filingDeadline: 'Nov 30', currency: 'S$', vatLabel: 'GST', vatRate: 9, exchangeRateToUSD: 0.75 },
+    'United Arab Emirates': { federalRate: 9, bracketName: 'Corporate Tax', filingDeadline: '9m after Y.E.', currency: 'AED', vatLabel: 'VAT', vatRate: 5, exchangeRateToUSD: 0.27 },
+    'South Africa': { federalRate: 27, bracketName: 'CIT', filingDeadline: '12m after Y.E.', currency: 'R', vatLabel: 'VAT', vatRate: 15, exchangeRateToUSD: 0.053 },
+    'Mexico': { federalRate: 30, bracketName: 'ISR', filingDeadline: 'Mar 31', currency: 'MX$', vatLabel: 'IVA', vatRate: 16, exchangeRateToUSD: 0.059 },
+    'Nigeria': { federalRate: 30, bracketName: 'CIT', filingDeadline: 'Jun 30', currency: '₦', vatLabel: 'VAT', vatRate: 7.5, exchangeRateToUSD: 0.0011 }, // Mock rate
+    'Default': { federalRate: 20, bracketName: 'Standard Corporate', filingDeadline: 'Dec 31', currency: '$', vatLabel: 'VAT/GST', vatRate: 15, exchangeRateToUSD: 1 }
 };
 
 // Hardcoded specific regulations (high priority)
 const SPECIFIC_REGULATIONS: Regulation[] = [
-    { 
+    {
         id: 'gdpr',
-        name: 'General Data Protection Regulation (GDPR)', 
-        region: 'EU', 
-        tags: ['Europe', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Netherlands', 'United Kingdom', 'Privacy'], 
-        risk: 'High', 
+        name: 'General Data Protection Regulation (GDPR)',
+        region: 'EU',
+        tags: ['Europe', 'Germany', 'France', 'Spain', 'Italy', 'Poland', 'Sweden', 'Netherlands', 'United Kingdom', 'Privacy'],
+        risk: 'High',
         type: 'Privacy',
         level: 'International',
         description: 'Mandatory data privacy and security law for European Union operations.',
@@ -73,12 +75,12 @@ const SPECIFIC_REGULATIONS: Regulation[] = [
         agentAction: 'Monitor new EU amendments and flag non-compliant data.',
         isAutomatable: false
     },
-    { 
+    {
         id: 'ccpa',
-        name: 'California Consumer Privacy Act (CCPA)', 
-        region: 'United States', 
-        tags: ['United States', 'Privacy'], 
-        risk: 'Medium', 
+        name: 'California Consumer Privacy Act (CCPA)',
+        region: 'United States',
+        tags: ['United States', 'Privacy'],
+        risk: 'Medium',
         type: 'Privacy',
         level: 'State',
         description: 'Enhances privacy rights and consumer protection for California residents.',
@@ -93,8 +95,8 @@ const SPECIFIC_REGULATIONS: Regulation[] = [
         id: 'sox',
         name: 'Sarbanes-Oxley Act (SOX)',
         region: 'United States',
-        tags: ['United States', 'Finance'], 
-        risk: 'Low', 
+        tags: ['United States', 'Finance'],
+        risk: 'Low',
         type: 'Finance',
         level: 'Federal',
         description: 'Protects investors from fraudulent accounting activities.',
@@ -110,14 +112,14 @@ const SPECIFIC_REGULATIONS: Regulation[] = [
 // Helper to generate generic regulations for countries not explicitly covered
 const generateDynamicRegulations = (locationStr: string, niche: string, structure: string, staffResidencies: string[] = []): Regulation[] => {
     const regs: Regulation[] = [];
-    
+
     // Parse Location "City, Country"
     const parts = locationStr.split(',').map(s => s.trim());
     const country = parts.length > 1 ? parts[1] : parts[0];
     const city = parts.length > 1 ? parts[0] : '';
 
     const isSoleProp = structure.toLowerCase().includes('sole') || structure.toLowerCase().includes('proprietorship');
-    
+
     // --- 1. FEDERAL / NATIONAL TAXES ---
     regs.push({
         id: `${country}-fed-tax`,
@@ -207,7 +209,7 @@ const generateDynamicRegulations = (locationStr: string, niche: string, structur
                 isAutomatable: false
             });
         }
-    } else if (country === 'United States') {
+    } else if (country === 'United States' || country === 'US') {
         regs.push({
             id: `us-state-tax`,
             name: `${city ? city + ' / ' : ''}State Franchise Tax`,
@@ -228,7 +230,7 @@ const generateDynamicRegulations = (locationStr: string, niche: string, structur
     // --- 3. STAFF RESIDENCY / EMPLOYMENT COMPLIANCE ---
     // Deduplicate staff countries
     const uniqueResidencies = Array.from(new Set(staffResidencies)).filter(r => r !== country); // Don't duplicate home country if already covered
-    
+
     uniqueResidencies.forEach(residency => {
         regs.push({
             id: `employment-${residency}`,
@@ -269,12 +271,18 @@ const generateDynamicRegulations = (locationStr: string, niche: string, structur
     return regs;
 };
 
-export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAskAgent }) => {
+export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAskAgent, transactions = [] }) => {
     const [selectedRegulation, setSelectedRegulation] = useState<Regulation | null>(null);
     const [agentAssignedMap, setAgentAssignedMap] = useState<Record<string, boolean>>({});
     const [automatedMap, setAutomatedMap] = useState<Record<string, boolean>>({});
-    const [activeTaxRegion, setActiveTaxRegion] = useState<string>(userData?.location?.split(',')[0].trim() || 'Nigeria');
-    
+
+    // Determine Primary Location
+    const primaryLocation = useMemo(() => {
+        return userData?.location?.split(',')[1]?.trim() || userData?.location?.split(',')[0]?.trim() || 'Nigeria';
+    }, [userData]);
+
+    const [activeTaxRegion, setActiveTaxRegion] = useState<string>(primaryLocation);
+
     // Collapsible State
     const [expandedRegions, setExpandedRegions] = useState<Record<string, boolean>>({});
 
@@ -284,28 +292,35 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
 
         const homeLocation = userData.location;
         const homeCountry = homeLocation.split(',')[1]?.trim() || homeLocation.split(',')[0].trim();
-        
+
         // Merge home location with operation range, remove duplicates
         const allRegions = Array.from(new Set([homeCountry, ...(userData.operationRange || [])]));
-        
+
         let compiledRegs: Regulation[] = [];
 
         // 1. Add specific hardcoded regs if they match any region or staff residency
         compiledRegs = compiledRegs.concat(SPECIFIC_REGULATIONS.filter(reg => {
-            // Check if regulation tags match any of our regions
-            const matchesRegion = reg.tags.some(tag => allRegions.some(region => region.includes(tag) || tag.includes(region)));
-            // Check if regulation matches specific niche tags if present (e.g. Finance)
-            const matchesNiche = reg.tags.some(tag => userData.niche.includes(tag));
-            // Check staff residencies for GDPR etc
+            // Check if regulation tags match any of our regions ONLY (No implicit global matching)
+            const matchesRegion = reg.tags.some(tag => {
+                // Special case for 'United States' vs 'US' etc if needed, but for now rely on exact string logic from our arrays
+                return allRegions.some(region => region.includes(tag) || tag.includes(region));
+            });
+
+            // Note: Previously we matched niche, but user requested strict filtering. 
+            // "only display frameworks of the user primary location... not a single extra framework"
+            // So we disable general niche matching unless it's tied to a location we are in.
+            // For now, let's assume specific regulations must match location.
+            // But we keep staff residency checks as they are "operating countries" effectively for employment law.
+
             const matchesStaff = userData.staffResidencies?.some(res => reg.tags.includes(res));
-            
-            return matchesRegion || matchesNiche || matchesStaff;
+
+            return matchesRegion || matchesStaff;
         }));
 
         // 2. Generate dynamic regs for Home Location (Most detailed)
         compiledRegs = compiledRegs.concat(generateDynamicRegulations(
             userData.location, // Pass full "City, Country"
-            userData.niche, 
+            userData.niche,
             userData.legalStructure,
             userData.staffResidencies
         ));
@@ -313,8 +328,8 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
         // 3. Generate simplified regs for other operating regions
         userData.operationRange?.forEach(opRegion => {
             if (!userData.location.includes(opRegion)) { // Don't duplicate home
-                 // Simplified generation for operating regions
-                 compiledRegs.push({
+                // Simplified generation for operating regions
+                compiledRegs.push({
                     id: `${opRegion}-foreign-entity`,
                     name: `${opRegion} Foreign Entity Compliance`,
                     region: opRegion,
@@ -329,7 +344,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                     agentAction: `Track revenue generated in ${opRegion}.`,
                     isAutomatable: true,
                     automationCapability: 'Segregate revenue by region.'
-                 });
+                });
             }
         });
 
@@ -358,7 +373,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
             // Default to expanded
             initialExpanded[region] = true;
         });
-        setExpandedRegions(prev => ({...initialExpanded, ...prev}));
+        setExpandedRegions(prev => ({ ...initialExpanded, ...prev }));
     }, [groupedRegulations]);
 
     const toggleRegion = (region: string) => {
@@ -369,13 +384,13 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
     };
 
     const handleAssignAgent = (regId: string) => {
-        setAgentAssignedMap(prev => ({...prev, [regId]: true}));
+        setAgentAssignedMap(prev => ({ ...prev, [regId]: true }));
     };
 
     const handleToggleAutomation = (regId: string) => {
-        setAutomatedMap(prev => ({...prev, [regId]: !prev[regId]}));
+        setAutomatedMap(prev => ({ ...prev, [regId]: !prev[regId] }));
         if (!automatedMap[regId]) {
-            setAgentAssignedMap(prev => ({...prev, [regId]: true}));
+            setAgentAssignedMap(prev => ({ ...prev, [regId]: true }));
         }
     };
 
@@ -384,20 +399,55 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
         return TAX_INTELLIGENCE[activeTaxRegion] || TAX_INTELLIGENCE['Default'];
     }, [activeTaxRegion]);
 
+    const primaryTaxInfo = useMemo(() => {
+        return TAX_INTELLIGENCE[primaryLocation] || TAX_INTELLIGENCE['Default'];
+    }, [primaryLocation]);
+
+    // Calculate Estimated Liability based on real transactions for specific location
+    const { estLiability, convertedLiability } = useMemo(() => {
+        // Filter transactions for revenue credited to the active region
+        // If a transaction has NO location, assume it belongs to the PRIMARY region.
+        const regionRevenue = transactions.filter(t => {
+            if (t.type !== 'credit' || t.status !== 'Completed') return false;
+
+            const txLocation = t.location;
+            if (!txLocation) {
+                // If no location set on transaction, attribute to primary location
+                return activeTaxRegion === primaryLocation;
+            }
+            return txLocation === activeTaxRegion;
+        }).reduce((acc, t) => acc + t.amount, 0);
+
+        // Simple estimation: Revenue * Tax Rate
+        const rawLiability = regionRevenue * (currentTaxInfo.federalRate / 100);
+
+        let converted = null;
+        // If active region is not primary, convert to primary currency
+        if (activeTaxRegion !== primaryLocation) {
+            // Convert Local -> USD -> Primary
+            const liabilityInUSD = rawLiability * currentTaxInfo.exchangeRateToUSD;
+            const liabilityInPrimary = liabilityInUSD / primaryTaxInfo.exchangeRateToUSD;
+            converted = liabilityInPrimary;
+        }
+
+        return { estLiability: rawLiability, convertedLiability: converted };
+    }, [transactions, currentTaxInfo, activeTaxRegion, primaryLocation, primaryTaxInfo]);
+
     const operationalRegions = useMemo(() => {
         if (!userData) return ['Nigeria'];
         const home = userData.location.split(',')[1]?.trim() || userData.location.split(',')[0].trim();
-        return Array.from(new Set([home, ...(userData.operationRange || [])]));
+        return Array.from(new Set([home, ...(userData.operationRange || [])])).filter(Boolean);
     }, [userData]);
 
     // --- Detail View ---
     if (selectedRegulation) {
+        // ... (existing detail view logic, omitted for brevity as no changes requested here)
         const isAssigned = agentAssignedMap[selectedRegulation.id];
         const isAutomated = automatedMap[selectedRegulation.id];
 
         return (
             <div className="space-y-6 animate-fade-in pb-10">
-                <button 
+                <button
                     onClick={() => setSelectedRegulation(null)}
                     className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-black transition-colors"
                 >
@@ -409,9 +459,8 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{selectedRegulation.name}</h1>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                     selectedRegulation.risk === 'High' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'
-                                }`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedRegulation.risk === 'High' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'
+                                    }`}>
                                     {selectedRegulation.risk} Risk
                                 </span>
                                 {selectedRegulation.level && (
@@ -439,8 +488,8 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                     </div>
 
                     <div className="w-full md:w-96 space-y-6">
-                         {/* Required Actions Card */}
-                         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        {/* Required Actions Card */}
+                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                             <h3 className="font-bold text-slate-900 mb-4">Required Actions</h3>
                             <ul className="space-y-4">
                                 {selectedRegulation.requiredActions.map((action, i) => (
@@ -454,16 +503,16 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                     </li>
                                 ))}
                             </ul>
-                         </div>
+                        </div>
 
-                         {/* Agent Assignment Card */}
-                         <div className={`p-6 rounded-2xl shadow-xl transition-all relative overflow-hidden ${isAutomated ? 'bg-[#50C913] text-black shadow-[#50C913]/30' : 'bg-black text-white shadow-slate-900/10'}`}>
+                        {/* Agent Assignment Card */}
+                        <div className={`p-6 rounded-2xl shadow-xl transition-all relative overflow-hidden ${isAutomated ? 'bg-[#50C913] text-black shadow-[#50C913]/30' : 'bg-black text-white shadow-slate-900/10'}`}>
                             <div className="relative z-10">
                                 <h3 className={`flex items-center gap-2 font-bold mb-2 ${isAutomated ? 'text-black' : 'text-white'}`}>
                                     {isAutomated ? <Zap className="w-5 h-5" /> : <Eye className={`w-5 h-5 ${isAutomated ? 'text-black' : 'text-[#50C913]'}`} />}
                                     {isAutomated ? 'Autopilot Active' : 'Agent Surveillance'}
                                 </h3>
-                                
+
                                 <p className={`text-xs mb-6 leading-relaxed ${isAutomated ? 'text-slate-800' : 'text-slate-400'}`}>
                                     {isAutomated ? selectedRegulation.automationCapability : selectedRegulation.agentAction}
                                 </p>
@@ -481,7 +530,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                 {!isAutomated ? (
                                     <div className="space-y-3">
                                         {!isAssigned && (
-                                            <button 
+                                            <button
                                                 onClick={() => handleAssignAgent(selectedRegulation.id)}
                                                 className="w-full bg-[#50C913] hover:bg-[#44ab10] text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-[#50C913]/20 active:scale-95"
                                             >
@@ -489,7 +538,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                             </button>
                                         )}
                                         {selectedRegulation.isAutomatable && (
-                                            <button 
+                                            <button
                                                 onClick={() => handleToggleAutomation(selectedRegulation.id)}
                                                 className="w-full bg-white text-black font-bold py-3 rounded-xl transition-all hover:bg-slate-100 active:scale-95 flex items-center justify-center gap-2"
                                             >
@@ -498,7 +547,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                         )}
                                     </div>
                                 ) : (
-                                    <button 
+                                    <button
                                         onClick={() => handleToggleAutomation(selectedRegulation.id)}
                                         className="w-full bg-black/10 hover:bg-black/20 text-black font-bold py-3 rounded-xl transition-all active:scale-95 border border-black/10"
                                     >
@@ -508,7 +557,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                             </div>
                             {/* Decorative BG */}
                             <div className={`absolute -bottom-10 -right-10 w-32 h-32 rounded-full blur-2xl ${isAutomated ? 'bg-white/30' : 'bg-[#50C913]/10'}`}></div>
-                         </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -518,7 +567,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
     // --- List View ---
     return (
         <div className="space-y-6 animate-fade-in">
-             <div className="flex justify-between items-end">
+            <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Regulations & Taxes</h1>
                     <p className="text-slate-500 text-sm mt-1">
@@ -549,7 +598,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                             {Object.keys(groupedRegulations).length > 0 ? (
                                 Object.entries(groupedRegulations).sort().map(([region, regs]) => (
                                     <div key={region} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-                                        <div 
+                                        <div
                                             onClick={() => toggleRegion(region)}
                                             className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors bg-white z-10 relative"
                                         >
@@ -566,24 +615,23 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                                 <ChevronDown className="w-4 h-4 text-slate-400" />
                                             </div>
                                         </div>
-                                        
+
                                         {/* Collapsible Content */}
                                         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${expandedRegions[region] ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                                             <div className="p-4 pt-0 grid gap-3 border-t border-slate-50 bg-slate-50/30">
                                                 {(regs as Regulation[]).map(reg => (
-                                                    <div 
-                                                        key={reg.id} 
+                                                    <div
+                                                        key={reg.id}
                                                         onClick={() => setSelectedRegulation(reg)}
                                                         className="bg-white p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group flex items-start justify-between relative overflow-hidden"
                                                     >
                                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#50C913] transition-colors"></div>
                                                         <div className="flex items-start gap-4 pl-2">
-                                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0 ${
-                                                                reg.risk === 'Critical' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0 ${reg.risk === 'Critical' ? 'bg-red-50 text-red-600 border border-red-100' :
                                                                 reg.risk === 'High' ? 'bg-black text-white border border-black' :
-                                                                reg.risk === 'Medium' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
-                                                                'bg-slate-50 text-slate-600 border border-slate-100'
-                                                            }`}>
+                                                                    reg.risk === 'Medium' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
+                                                                        'bg-slate-50 text-slate-600 border border-slate-100'
+                                                                }`}>
                                                                 {reg.region === 'EU' ? 'EU' : reg.region.substring(0, 2).toUpperCase()}
                                                             </div>
                                                             <div>
@@ -596,7 +644,7 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                                                     {/* Tags */}
                                                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase">{reg.type}</span>
                                                                     {reg.level && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 uppercase">{reg.level}</span>}
-                                                                    
+
                                                                     {agentAssignedMap[reg.id] && !automatedMap[reg.id] && (
                                                                         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border bg-[#50C913]/10 text-black border-[#50C913]/20 flex items-center gap-1">
                                                                             <Activity className="w-3 h-3" /> Monitored
@@ -640,10 +688,10 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                 Tax Intelligence
                             </h3>
                             <div className="relative">
-                                <select 
+                                <select
                                     value={activeTaxRegion}
                                     onChange={(e) => setActiveTaxRegion(e.target.value)}
-                                    className="text-xs font-bold bg-white border border-slate-200 rounded-lg py-1 pl-2 pr-6 appearance-none cursor-pointer focus:outline-none focus:border-black"
+                                    className="text-xs font-bold bg-white border border-slate-200 rounded-lg py-1 pl-2 pr-6 appearance-none cursor-pointer focus:outline-none focus:border-black max-w-[120px] truncate"
                                 >
                                     {operationalRegions.map(region => (
                                         <option key={region} value={region}>{region}</option>
@@ -662,11 +710,11 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{currentTaxInfo.vatLabel}</p>
-                                     <span className="text-xl font-bold text-slate-900">{currentTaxInfo.vatRate}%</span>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{currentTaxInfo.vatLabel}</p>
+                                    <span className="text-xl font-bold text-slate-900">{currentTaxInfo.vatRate}%</span>
                                 </div>
                             </div>
-                            
+
                             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                 <div className="bg-[#50C913] h-full" style={{ width: `${Math.min(currentTaxInfo.federalRate * 1.5, 100)}%` }}></div>
                             </div>
@@ -680,14 +728,22 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                                 </div>
                                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p className="text-[10px] font-bold text-slate-500 mb-1">Est. Liability</p>
-                                    <div className="flex items-center gap-1.5 font-bold text-slate-900 text-sm">
-                                        <TrendingUp className="w-3.5 h-3.5 text-slate-400" /> {userData?.isFreshSignup ? `${currentTaxInfo.currency}0` : `${currentTaxInfo.currency}Est.`}
+                                    <div className="flex flex-col">
+                                        <span className="flex items-center gap-1.5 font-bold text-slate-900 text-sm">
+                                            <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
+                                            {currentTaxInfo.currency}{estLiability.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        </span>
+                                        {convertedLiability !== null && (
+                                            <span className="text-[10px] text-slate-400 font-medium">
+                                                (≈ {primaryTaxInfo.currency}{convertedLiability.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })})
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
-                            <button 
-                                onClick={() => onAskAgent?.(`I need to prepare my tax filing for ${activeTaxRegion}. Please provide a checklist of required documents, deadlines, and an estimation of liability.`)}
+                            <button
+                                onClick={() => onAskAgent?.(`I need to prepare my tax filing for ${activeTaxRegion}. Please provide a checklist of required documents, deadlines, and an estimation of liability based on my current revenue of ${currentTaxInfo.currency}${estLiability.toLocaleString()}.`)}
                                 className="w-full py-2.5 bg-black text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                             >
                                 <FileCheck className="w-3.5 h-3.5" /> Prepare {activeTaxRegion} Filing
@@ -701,13 +757,13 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
                             <AlertTriangle className="w-4 h-4 text-black" />
                             Pending Actions
                         </h3>
-                        {userData?.isFreshSignup ? (
-                             <div className="text-center py-6">
+                        {userData?.completedRequirements && userData.completedRequirements.length > 0 ? (
+                            <div className="text-center py-6">
                                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                                     <ShieldCheck className="w-4 h-4 text-green-600" />
                                 </div>
                                 <p className="text-xs text-slate-500">You are fully compliant!</p>
-                             </div>
+                            </div>
                         ) : (
                             <ul className="space-y-3">
                                 <li className="flex gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -726,13 +782,13 @@ export const RegulationsView: React.FC<RegulationsViewProps> = ({ userData, onAs
 
                     <div className="bg-black rounded-2xl p-5 text-white relative overflow-hidden shadow-lg shadow-black/20 border border-slate-800">
                         <div className="absolute top-0 right-0 p-4 opacity-20">
-                             <Globe className="w-24 h-24 text-[#50C913]" />
+                            <Globe className="w-24 h-24 text-[#50C913]" />
                         </div>
                         <h3 className="font-bold text-base relative z-10">Going Global?</h3>
                         <p className="text-slate-400 text-xs mt-2 relative z-10 mb-4 leading-relaxed">
                             Check regulatory requirements for new markets.
                         </p>
-                        <button 
+                        <button
                             onClick={() => onAskAgent?.("I am planning to expand my business globally. Can you analyze regulatory requirements for potential new markets?")}
                             className="relative z-10 w-full bg-[#50C913] text-black py-2 rounded-lg text-xs font-bold hover:bg-[#44ab10] transition-colors shadow-sm"
                         >

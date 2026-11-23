@@ -1,58 +1,53 @@
 
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
-// Vite exposes VITE_-prefixed vars on import.meta.env in both dev and build.
-// The process.env fallback keeps the define() in vite.config.ts working.
-const apiKey =
-    import.meta.env?.VITE_GEMINI_API_KEY ||
-    (typeof process !== 'undefined' ? process.env?.API_KEY : '') ||
-    '';
+const apiKey = process.env.API_KEY || '';
 
 // Initialize client securely. 
 // Note: In a real production app, never expose keys in client-side code without proxy or strict restrictions.
 const ai = new GoogleGenAI({ apiKey });
 
 interface AgentConfig {
-    name?: string;
-    personality?: string;
-    model?: string;
-    context?: string; // New field for dynamic app data
+  name?: string;
+  personality?: string;
+  model?: string;
+  context?: string; // New field for dynamic app data
 }
 
 /**
  * Creates a chat session tailored for AMSquare Enterprise Financial Agent.
  */
 export const createAnalystChat = (config?: AgentConfig): Chat => {
-  const modelName = config?.model === 'Pro' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+  const modelName = config?.model === 'Pro' ? 'gemini-2.0-flash' : 'gemini-2.0-flash';
   const agentName = config?.name || 'Ralph';
   const personality = config?.personality || 'Professional';
   const appData = config?.context || "No live data available.";
 
   let toneInstruction = "You are professional, precise, authoritative, and proactive. You don't just answer questions; you provide financial strategy.";
-  
+
   // Personality Mapping
   switch (personality.toLowerCase()) {
-      case 'relaxed':
-          toneInstruction = "You are chill, laid-back, and easygoing. Use casual language but keep the financial advice sound.";
-          break;
-      case 'cool':
-          toneInstruction = "You are hip, trendy, and confident. Use modern slang appropriately and keep it brief.";
-          break;
-      case 'strict':
-          toneInstruction = "You are extremely strict, demanding, and no-nonsense. Focus purely on compliance, savings, and efficiency. Do not use filler words.";
-          break;
-      case 'friendly':
-          toneInstruction = "You are super warm, empathetic, and encouraging. Use emojis and be very supportive.";
-          break;
-      case 'ghetto':
-          toneInstruction = "You speak in heavy street slang. You are 'from the block'. You give financial advice like a street-smart hustler.";
-          break;
-      case 'illiterate':
-          toneInstruction = "You have terrible grammar and spelling. You type like someone who doesn't know how to write well, but your math is surprisingly good.";
-          break;
-      case 'pirate':
-          toneInstruction = "You are a pirate captain. Speak in nautical terms, use 'Arrr', and refer to funds as 'booty' or 'doubloons'.";
-          break;
+    case 'relaxed':
+      toneInstruction = "You are chill, laid-back, and easygoing. Use casual language but keep the financial advice sound.";
+      break;
+    case 'cool':
+      toneInstruction = "You are hip, trendy, and confident. Use modern slang appropriately and keep it brief.";
+      break;
+    case 'strict':
+      toneInstruction = "You are extremely strict, demanding, and no-nonsense. Focus purely on compliance, savings, and efficiency. Do not use filler words.";
+      break;
+    case 'friendly':
+      toneInstruction = "You are super warm, empathetic, and encouraging. Use emojis and be very supportive.";
+      break;
+    case 'ghetto':
+      toneInstruction = "You speak in heavy street slang. You are 'from the block'. You give financial advice like a street-smart hustler.";
+      break;
+    case 'illiterate':
+      toneInstruction = "You have terrible grammar and spelling. You type like someone who doesn't know how to write well, but your math is surprisingly good.";
+      break;
+    case 'pirate':
+      toneInstruction = "You are a pirate captain. Speak in nautical terms, use 'Arrr', and refer to funds as 'booty' or 'doubloons'.";
+      break;
   }
 
   return ai.chats.create({
@@ -96,7 +91,7 @@ export const createAnalystChat = (config?: AgentConfig): Chat => {
 export const generateBusinessReport = async (topic: string): Promise<string> => {
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash',
       contents: `Draft a formal Financial Document for AMSquare Enterprise.
       
       Request Details: ${topic}

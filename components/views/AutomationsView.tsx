@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
-import { Workflow, Zap, Play, Pause, DollarSign, Clock, Layers, Plus, X, ArrowRight, Sparkles, Check, PieChart, AlertCircle } from 'lucide-react';
+import { Workflow, Zap, Play, Pause, DollarSign, Clock, Layers, Plus, X, ArrowRight, Sparkles, Check, PieChart, AlertCircle, Trash2 } from 'lucide-react';
 import { AutomationRule, UserData } from '../../types';
 
 interface AutomationsViewProps {
     rules: AutomationRule[];
-    onAddRule: (rule: AutomationRule) => void;
+    onAddRule: (rule: Partial<AutomationRule>) => void;
+    onToggleRule: (id: string, isActive: boolean) => void;
+    onDeleteRule: (id: string) => void;
     userData?: UserData;
 }
 
-export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRule, userData }) => {
+export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRule, onToggleRule, onDeleteRule, userData }) => {
     const isFresh = userData?.isFreshSignup;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newRule, setNewRule] = useState({
@@ -24,17 +26,16 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
         { name: 'Profit Sweep', condition: 'End of Month Profit > $0', action: 'Move 50% to Savings' },
     ];
 
-    // Mock Allocation Data
-    const allocations = isFresh ? [] : [
-        { label: 'Tax Vault', amount: 12450, percentage: 20, color: 'bg-red-500' },
-        { label: 'Operations', amount: 37200, percentage: 60, color: 'bg-blue-500' },
-        { label: 'Profit/Savings', amount: 12350, percentage: 20, color: 'bg-[#50C913]' },
-    ];
+    // Real Allocation Data Logic
+    // If no specific rules exist, show empty.
+    const allocations: { label: string, amount: number, percentage: number, color: string }[] = [];
+    // In future, this would aggregate real 'Vault' balances.
+
     const totalBalance = allocations.reduce((acc, curr) => acc + curr.amount, 0);
 
     const handleCreateRule = () => {
         if (!newRule.name || !newRule.condition || !newRule.action) return;
-        
+
         onAddRule({
             id: Date.now(),
             name: newRule.name,
@@ -44,7 +45,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
             lastRun: 'Never',
             source: 'manual'
         });
-        
+
         setIsModalOpen(false);
         setNewRule({ name: '', condition: '', action: '' });
     };
@@ -55,12 +56,12 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
 
     return (
         <div className="space-y-6 animate-fade-in relative">
-             <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Automations & Rules</h1>
                     <p className="text-slate-500 text-sm mt-1">Configure logic for automatic fund allocation.</p>
                 </div>
-                <button 
+                <button
                     onClick={() => setIsModalOpen(true)}
                     className="bg-black hover:bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-lg active:scale-95"
                 >
@@ -80,7 +81,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                             <p className="text-slate-500 text-sm mt-2 max-w-xs leading-relaxed">
                                 You can create rules manually or ask Ralph, your Agent, to set them up for you in the chat.
                             </p>
-                            <button 
+                            <button
                                 onClick={() => setIsModalOpen(true)}
                                 className="mt-6 text-[#50C913] font-bold text-sm hover:underline"
                             >
@@ -108,11 +109,24 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                             </div>
                                         </div>
                                     </div>
-                                    <button className={`p-1.5 rounded-lg transition-colors border ${rule.active ? 'text-black bg-white border-slate-200 hover:bg-slate-50' : 'text-slate-400 bg-slate-50 border-slate-100 hover:bg-slate-100'}`}>
-                                        {rule.active ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => onToggleRule(rule.id as any, !!rule.active)}
+                                            className={`p-1.5 rounded-lg transition-colors border ${rule.active ? 'text-black bg-white border-slate-200 hover:bg-slate-50' : 'text-slate-400 bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
+                                            title={rule.active ? "Pause Rule" : "Activate Rule"}
+                                        >
+                                            {rule.active ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                                        </button>
+                                        <button
+                                            onClick={() => onDeleteRule(rule.id as any)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
+                                            title="Delete Rule"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
-                                
+
                                 <div className="relative pl-3 border-l-2 border-slate-100 space-y-2">
                                     <div className="flex items-center gap-3">
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider w-8">When</span>
@@ -129,8 +143,8 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                 </div>
 
                 <div className="space-y-6">
-                     {/* Allocations Panel */}
-                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                    {/* Allocations Panel */}
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="font-bold text-slate-900 flex items-center gap-2">
                                 <PieChart className="w-4 h-4 text-slate-500" />
@@ -138,7 +152,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                             </h3>
                             <span className="text-xs font-bold text-slate-500">Total: ${totalBalance.toLocaleString()}</span>
                         </div>
-                        
+
                         {allocations.length === 0 ? (
                             <div className="py-8 text-center bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
                                 <AlertCircle className="w-8 h-8 text-slate-300 mb-2" />
@@ -150,9 +164,9 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 {/* Visual Bar */}
                                 <div className="h-4 bg-slate-100 rounded-full overflow-hidden flex">
                                     {allocations.map((alloc, idx) => (
-                                        <div 
-                                            key={idx} 
-                                            className={`h-full ${alloc.color}`} 
+                                        <div
+                                            key={idx}
+                                            className={`h-full ${alloc.color}`}
                                             style={{ width: `${alloc.percentage}%` }}
                                             title={`${alloc.label}: ${alloc.percentage}%`}
                                         />
@@ -180,15 +194,15 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 </div>
                             </div>
                         )}
-                        
+
                         <div className="mt-6 pt-4 border-t border-slate-100">
                             <button className="w-full py-2.5 bg-slate-50 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-100 hover:text-black transition-colors">
                                 Edit Allocation Rules
                             </button>
                         </div>
-                     </div>
+                    </div>
 
-                     <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                         <h3 className="font-bold text-slate-900 mb-4 text-sm">Automation Log</h3>
                         {rules.length === 0 ? (
                             <div className="text-center py-6 text-slate-400 text-xs">No activity yet.</div>
@@ -206,7 +220,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 </ul>
                             </div>
                         )}
-                     </div>
+                    </div>
                 </div>
             </div>
 
@@ -222,7 +236,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-0.5">Define logic to automate your financial flows.</p>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500 hover:text-black"
                             >
@@ -235,7 +249,7 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Quick Templates</h3>
                                 <div className="grid grid-cols-1 gap-2">
                                     {templates.map((t, i) => (
-                                        <button 
+                                        <button
                                             key={i}
                                             onClick={() => applyTemplate(t)}
                                             className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-[#50C913] hover:bg-[#50C913]/5 transition-all group text-left"
@@ -258,24 +272,24 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Rule Name</label>
-                                    <input 
+                                    <input
                                         type="text"
                                         placeholder="e.g. Monthly Savings"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-black transition-all text-sm font-medium"
                                         value={newRule.name}
-                                        onChange={(e) => setNewRule({...newRule, name: e.target.value})}
+                                        onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Trigger Condition (When)</label>
                                     <div className="relative">
-                                        <input 
+                                        <input
                                             type="text"
                                             placeholder="e.g. Revenue > $5000"
                                             className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-black transition-all text-sm font-mono text-slate-700"
                                             value={newRule.condition}
-                                            onChange={(e) => setNewRule({...newRule, condition: e.target.value})}
+                                            onChange={(e) => setNewRule({ ...newRule, condition: e.target.value })}
                                         />
                                         <Zap className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     </div>
@@ -284,12 +298,12 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Action (Do)</label>
                                     <div className="relative">
-                                        <input 
+                                        <input
                                             type="text"
                                             placeholder="e.g. Move 10% to Reserve"
                                             className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-black transition-all text-sm font-mono text-slate-700"
                                             value={newRule.action}
-                                            onChange={(e) => setNewRule({...newRule, action: e.target.value})}
+                                            onChange={(e) => setNewRule({ ...newRule, action: e.target.value })}
                                         />
                                         <Play className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     </div>
@@ -298,13 +312,13 @@ export const AutomationsView: React.FC<AutomationsViewProps> = ({ rules, onAddRu
                         </div>
 
                         <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-                            <button 
+                            <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 onClick={handleCreateRule}
                                 disabled={!newRule.name || !newRule.condition || !newRule.action}
                                 className="px-5 py-2.5 bg-black text-white font-bold text-xs rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/10 flex items-center gap-2"

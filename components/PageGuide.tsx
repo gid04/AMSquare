@@ -51,6 +51,11 @@ const GUIDE_CONTENT: Record<string, { title: string, content: string }[]> = {
         { title: 'Service Catalog', content: 'Define what you sell. Add services, products, and subscription plans.' },
         { title: 'Invoice Generator', content: 'Create and send professional invoices directly linked to your catalog items.' },
         { title: 'Discount Codes', content: 'Manage promo codes and price reductions for your customers.' }
+    ],
+    [View.NOTIFICATIONS]: [
+        { title: 'Central Command', content: 'View system alerts, approval requests, and messages from connected apps (Gmail, Outlook) in one stream.' },
+        { title: 'Agent Actions', content: 'Ralph analyzes incoming messages and suggests one-click actions like "Generate Invoice" or "Reconcile Payment".' },
+        { title: 'Smart Outbox', content: 'Review and approve AI-drafted replies before they are sent to your clients.' }
     ]
 };
 
@@ -70,13 +75,13 @@ export const PageGuide: React.FC<PageGuideProps> = ({ view, onClose, onComplete 
 
     return (
         <div className="fixed bottom-8 right-8 z-50 w-80 bg-black text-white p-6 rounded-2xl shadow-2xl animate-slide-up border border-slate-800">
-            <button 
+            <button
                 onClick={onClose}
                 className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
             >
                 <X className="w-4 h-4" />
             </button>
-            
+
             <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-[#50C913] rounded-lg text-black">
                     <Sparkles className="w-3.5 h-3.5" />
@@ -95,7 +100,7 @@ export const PageGuide: React.FC<PageGuideProps> = ({ view, onClose, onComplete 
                         <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === step ? 'w-6 bg-white' : 'w-1.5 bg-white/20'}`} />
                     ))}
                 </div>
-                <button 
+                <button
                     onClick={handleNext}
                     className="flex items-center gap-2 text-xs font-bold hover:text-[#50C913] transition-colors"
                 >
