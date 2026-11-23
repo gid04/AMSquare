@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserData } from '../../types';
-import { Settings, Image, Globe, Lock, Bell, ChevronRight, Check, Shield, Smartphone, Mail, CreditCard, ArrowLeft, DollarSign, Clock, ChevronDown, Link2, Code, Webhook, Key, Copy, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff, X, Palette, User, Zap, Briefcase, MapPin, FileText, Building2, Wallet, Share2 } from 'lucide-react';
+import { Settings, Image, Globe, Lock, Bell, ChevronRight, Check, Shield, Smartphone, Mail, CreditCard, ArrowLeft, DollarSign, Clock, ChevronDown, Link2, Code, Webhook, Key, Copy, Plus, Trash2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff, X, Palette, User, Zap, Briefcase, MapPin, FileText, Building2, Wallet, Share2, ArrowRight } from 'lucide-react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 interface SettingsViewProps {
     userData?: UserData;
@@ -11,6 +13,7 @@ interface SettingsViewProps {
     onReturnToBusiness?: () => void;
     isInRequirementMode?: boolean;
     onAskAgent?: (query: string) => void;
+    onBankDisconnect?: () => void;
 }
 
 const COLOR_SWATCHES = [
@@ -32,47 +35,48 @@ const PERSONALITIES = [
 ];
 
 const CONTINENTS_AND_COUNTRIES = [
-  '--- Continents ---', 'Africa', 'Antarctica', 'Asia', 'Europe', 'North America', 'Oceania', 'South America',
-  '--- Countries ---', 
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Australia', 'Austria', 
-  'Belgium', 'Brazil', 'Canada', 'China', 'Egypt', 'France', 'Germany', 'India', 'Indonesia', 
-  'Italy', 'Japan', 'Mexico', 'Netherlands', 'Nigeria', 'Russia', 'Saudi Arabia', 'South Africa', 
-  'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Turkey', 'United Arab Emirates', 'United Kingdom', 'United States'
+    '--- Continents ---', 'Africa', 'Antarctica', 'Asia', 'Europe', 'North America', 'Oceania', 'South America',
+    '--- Countries ---',
+    'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Australia', 'Austria',
+    'Belgium', 'Brazil', 'Canada', 'China', 'Egypt', 'France', 'Germany', 'India', 'Indonesia',
+    'Italy', 'Japan', 'Mexico', 'Netherlands', 'Nigeria', 'Russia', 'Saudi Arabia', 'South Africa',
+    'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Turkey', 'United Arab Emirates', 'United Kingdom', 'United States'
 ];
 
-// Mock database of legal ID requirements with FORMAT hints
-const ID_SUGGESTIONS: Record<string, {label: string, value: string, format?: string}[]> = {
+// Mock database of legal ID requirements with FORMAT hints & Regex
+const ID_SUGGESTIONS: Record<string, { label: string, value: string, format?: string, regex?: RegExp }[]> = {
     'United States': [
-        { label: 'EIN', value: '', format: 'XX-XXXXXXX' },
-        { label: 'State Tax ID', value: '', format: 'XXXXXXXX' },
-        { label: 'NAICS Code', value: '', format: 'XXXXXX' }
+        { label: 'EIN', value: '', format: 'XX-XXXXXXX', regex: /^\d{2}-\d{7}$/ },
+        { label: 'State Tax ID', value: '', format: '8-12 Digits', regex: /^\d{8,12}$/ },
+        { label: 'NAICS Code', value: '', format: '6 Digits', regex: /^\d{6}$/ }
     ],
     'United Kingdom': [
-        { label: 'CRN', value: '', format: 'XXXXXXXX' },
-        { label: 'UTR', value: '', format: 'XXXXX XXXXX' },
-        { label: 'VAT Number', value: '', format: 'GB XXX XXXX XX' }
+        { label: 'CRN', value: '', format: '8 Characters', regex: /^[A-Z0-9]{8}$/i },
+        { label: 'UTR', value: '', format: '10 Digits', regex: /^\d{5} ?\d{5}$/ },
+        { label: 'VAT Number', value: '', format: 'GB 123 4567 89', regex: /^GB ?\d{3} ?\d{4} ?\d{2}$/i }
     ],
     'Canada': [
-        { label: 'Business Number (BN)', value: '', format: 'XXXXXXXXX' },
-        { label: 'GST/HST Account Number', value: '', format: 'XXXXXXXXX RT XXXX' }
+        { label: 'Business Number (BN)', value: '', format: '9 Digits', regex: /^\d{9}$/ },
+        { label: 'GST/HST Account Number', value: '', format: '9 Digits RT 0001', regex: /^\d{9} ?RT ?\d{4}$/i }
     ],
     'Default': [
-        { label: 'Tax Identification Number', value: '' },
-        { label: 'Company Registration ID', value: '' }
+        { label: 'Tax Identification Number', value: '', regex: /^.{5,}$/ }, // Generic length check
+        { label: 'Company Registration ID', value: '', regex: /^.{5,}$/ }
     ]
 };
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ 
-    userData, 
-    onUpdateUserData, 
+export const SettingsView: React.FC<SettingsViewProps> = ({
+    userData,
+    onUpdateUserData,
     initialTab = 'main',
     onCompleteRequirement,
     onReturnToBusiness,
     isInRequirementMode,
-    onAskAgent
+    onAskAgent,
+    onBankDisconnect
 }) => {
-    const [activeTab, setActiveTab] = useState<'main' | 'branding' | 'agent' | 'admin' | 'security' | 'connectors' | 'api' >(initialTab);
-    
+    const [activeTab, setActiveTab] = useState<'main' | 'branding' | 'agent' | 'admin' | 'security' | 'connectors' | 'api'>(initialTab);
+
     // Local State
     const [primaryColor, setPrimaryColor] = useState('#50C913');
     const [agentName, setAgentName] = useState(userData?.agentName || 'Ralph');
@@ -83,16 +87,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [opsRange, setOpsRange] = useState<string[]>(userData?.operationRange || []);
     const [newOpLocation, setNewOpLocation] = useState('');
     const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
-    
+
     // Legal Details
-    const [legalDetails, setLegalDetails] = useState<{label: string, value: string, format?: string}[]>([]);
+    const [legalDetails, setLegalDetails] = useState<{ label: string, value: string, format?: string, verified?: boolean }[]>([]);
+    const [showSuccessNav, setShowSuccessNav] = useState(false);
 
     // Security State
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    
+
     // Integrations State
     const [bankConnected, setBankConnected] = useState(userData?.hasConnectedBank || false);
     const [isConnectingBank, setIsConnectingBank] = useState(false);
+
+    // Auth & Delete
+    const deleteAccount = useMutation(api.auth.deleteAccount);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        if (!userData?._id) return;
+        setIsDeleting(true);
+        try {
+            await deleteAccount({ userId: userData._id as any });
+            window.location.reload();
+        } catch (error) {
+            console.error("Failed to delete account:", error);
+            setIsDeleting(false);
+        }
+    };
 
     // Effect to handle external navigation props
     useEffect(() => {
@@ -111,7 +133,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             setPrimaryAddress(userData.primaryAddress || userData.location);
             setOpsRange(userData.operationRange || []);
             setBankConnected(userData.hasConnectedBank || false);
-            
+
             // Auto-populate legal details if empty
             if (!userData.legalDetails || userData.legalDetails.length === 0) {
                 const country = userData.location.split(',')[0].trim();
@@ -121,14 +143,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 // Merge with format hints if possible
                 const country = userData.location.split(',')[0].trim();
                 const defaults = ID_SUGGESTIONS[country] || ID_SUGGESTIONS['Default'];
-                
+
                 const merged = userData.legalDetails.map(d => {
                     const found = defaults.find(def => def.label === d.label);
                     return { ...d, format: found?.format };
                 });
                 setLegalDetails(merged);
             }
-            
+
             // Apply Theme Functional Logic
             if (userData.theme === 'dark') {
                 applyDarkMode(true);
@@ -148,7 +170,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         // Functional implementation of dark mode via style injection
         const styleId = 'amsquare-dark-mode';
         let styleTag = document.getElementById(styleId);
-        
+
         if (enable) {
             if (!styleTag) {
                 styleTag = document.createElement('style');
@@ -232,8 +254,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const handleLegalDetailChange = (index: number, field: 'label' | 'value', val: string) => {
         const updated = [...legalDetails];
         updated[index][field] = val;
+
+        // Auto-Verify format
+        if (field === 'value') {
+            const country = userData?.location.split(',')[0].trim() || 'Default';
+            const suggestions = ID_SUGGESTIONS[country] || ID_SUGGESTIONS['Default'];
+            // Find regex
+            const definition = suggestions.find(s => s.label === updated[index].label);
+
+            if (definition?.regex) {
+                updated[index].verified = definition.regex.test(val);
+            } else {
+                // Default verification if manual entry (just length check)
+                updated[index].verified = val.length > 3;
+            }
+        }
+
         setLegalDetails(updated);
         handleUpdate({ legalDetails: updated });
+
+        // Auto-complete requirement check
+        const allVerified = updated.every(d => d.verified);
+        if (allVerified && updated.length > 0 && onCompleteRequirement) {
+            onCompleteRequirement('legal_ids');
+            if (isInRequirementMode) {
+                setShowSuccessNav(true);
+            }
+        }
     };
 
     const addLegalRow = () => {
@@ -256,25 +303,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             handleUpdate({ hasConnectedBank: true });
             if (isInRequirementMode && onCompleteRequirement) {
                 onCompleteRequirement('bank_connect');
+                if (isInRequirementMode) setShowSuccessNav(true);
             }
         }, 2000);
     };
 
-    const validateFormat = (value: string, format?: string) => {
-        if (!format || !value) return true;
-        // Simple length check for demo purposes, could be regex
-        // E.g., EIN XX-XXXXXXX is length 10
-        if (format.length === value.length) return true;
-        // Check for hyphen positions if any
-        return false;
+    const handleDisconnect = () => {
+        setBankConnected(false);
+        // Call the parent handler to reset global transactions
+        if (onBankDisconnect) {
+            onBankDisconnect();
+        } else {
+            handleUpdate({ hasConnectedBank: false });
+        }
     };
 
-    // Save handler for Admin tab to trigger requirement completion
+    // Save handler for Admin tab to trigger requirement completion manually if auto fails
     const handleSaveAdmin = () => {
         // Check if all fields are filled
         const allFilled = legalDetails.every(d => d.value.length > 0);
-        if (allFilled && isInRequirementMode && onCompleteRequirement) {
+        if (allFilled && onCompleteRequirement) {
             onCompleteRequirement('legal_ids');
+            if (isInRequirementMode) setShowSuccessNav(true);
         }
     };
 
@@ -290,13 +340,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-3 uppercase">Theme</label>
                         <div className="flex gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200 inline-flex">
-                            <button 
+                            <button
                                 onClick={() => handleThemeChange('light')}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${userData?.theme !== 'dark' ? 'bg-white shadow-sm text-black' : 'text-slate-500 hover:text-slate-700'}`}
                             >
                                 Bright Mode
                             </button>
-                            <button 
+                            <button
                                 onClick={() => handleThemeChange('dark')}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${userData?.theme === 'dark' ? 'bg-black shadow-sm text-white' : 'text-slate-500 hover:text-slate-700'}`}
                             >
@@ -308,7 +358,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <label className="block text-xs font-bold text-slate-700 mb-3 uppercase">Language</label>
                         <div className="relative group">
                             <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <select 
+                            <select
                                 value={userData?.language || 'English'}
                                 onChange={(e) => handleUpdate({ language: e.target.value })}
                                 className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:border-black appearance-none cursor-pointer shadow-sm transition-all"
@@ -368,8 +418,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="p-6 space-y-6">
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase">Agent Name</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={agentName}
                         onChange={(e) => { setAgentName(e.target.value); handleUpdate({ agentName: e.target.value }); }}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:border-black transition-all"
@@ -380,7 +430,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <label className="text-xs font-bold text-slate-500 uppercase">Personality</label>
                         <div className="relative group">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <select 
+                            <select
                                 value={agentPersonality}
                                 onChange={(e) => { setAgentPersonality(e.target.value); handleUpdate({ agentPersonality: e.target.value }); }}
                                 className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:border-black appearance-none cursor-pointer"
@@ -394,7 +444,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <label className="text-xs font-bold text-slate-500 uppercase">Model Intelligence</label>
                         <div className="relative group">
                             <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <select 
+                            <select
                                 value={agentModel}
                                 onChange={(e) => { setAgentModel(e.target.value); handleUpdate({ agentModel: e.target.value }); }}
                                 className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:border-black appearance-none cursor-pointer"
@@ -419,12 +469,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h2 className="text-base font-bold text-slate-900">Administration</h2>
                 <p className="text-xs text-slate-500 mt-1">Billing details, legal identity, and operational jurisdictions.</p>
             </div>
-            
+
             {/* Validation Banner if IDs are empty */}
-            {legalDetails.some(d => !d.value) && (
-                <div className="bg-red-50 p-4 border-b border-red-100 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <p className="text-sm font-bold text-red-700">Legal Identities are required for full app access. Please complete the fields below.</p>
+            {legalDetails.some(d => !d.verified) && (
+                <div className="bg-amber-50 p-4 border-b border-amber-100 flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    <p className="text-sm font-bold text-amber-700">Please complete and verify your legal identities to unlock full features.</p>
                 </div>
             )}
 
@@ -434,8 +484,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <label className="text-xs font-bold text-slate-500 uppercase">Primary HQ Address</label>
                         <div className="relative">
                             <MapPin className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={primaryAddress}
                                 onChange={(e) => { setPrimaryAddress(e.target.value); handleUpdate({ primaryAddress: e.target.value }); }}
                                 placeholder="123 Business St, City, Country"
@@ -448,8 +498,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <label className="text-xs font-bold text-slate-500 uppercase">Billing Address</label>
                         <div className="relative">
                             <CreditCard className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={billingAddress}
                                 onChange={(e) => { setBillingAddress(e.target.value); handleUpdate({ billingAddress: e.target.value }); }}
                                 placeholder="Same as HQ"
@@ -458,7 +508,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="h-px bg-slate-100"></div>
 
                 {/* Legal Identity Section */}
@@ -471,7 +521,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <Plus className="w-3 h-3" /> Add Field
                         </button>
                     </div>
-                    
+
                     {/* Auto-suggestion Info */}
                     {userData?.isFreshSignup && (
                         <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-start gap-2 mb-2">
@@ -486,27 +536,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {legalDetails.map((detail, idx) => (
                             <div key={idx} className="flex gap-3">
                                 <div className="w-1/3">
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         placeholder="Label (e.g. VAT ID)"
                                         value={detail.label}
                                         onChange={(e) => handleLegalDetailChange(idx, 'label', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:border-black"
+                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 focus:outline-none focus:border-black disabled:opacity-50"
+                                        disabled={detail.verified}
                                     />
                                 </div>
                                 <div className="flex-1 flex gap-2">
                                     <div className="relative flex-1 group">
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder={detail.format || "Value (Required)"}
                                             value={detail.value}
                                             onChange={(e) => handleLegalDetailChange(idx, 'value', e.target.value)}
-                                            className={`w-full pl-3 pr-10 py-2 rounded-lg border bg-white text-sm font-medium text-slate-900 focus:outline-none focus:border-black transition-all ${
-                                                !detail.value ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-200'
-                                            }`}
+                                            className={`w-full pl-3 pr-10 py-2 rounded-lg border bg-white text-sm font-medium text-slate-900 focus:outline-none focus:border-black transition-all ${detail.verified ? 'border-[#50C913] ring-1 ring-[#50C913]/20 bg-green-50/10' :
+                                                !detail.value ? 'border-slate-200' : 'border-slate-300'
+                                                } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                            disabled={detail.verified}
                                         />
+                                        {/* Verified Badge */}
+                                        {detail.verified && (
+                                            <div className="absolute right-9 top-1/2 -translate-y-1/2 text-[#50C913]" title="Format Verified">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </div>
+                                        )}
+
                                         {/* Agent Trigger Icon */}
-                                        <button 
+                                        <button
                                             onClick={() => onAskAgent && onAskAgent(`What is ${detail.label} in ${userData?.location?.split(',')[0]} and where can I find it?`)}
                                             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-[#50C913] hover:bg-[#50C913]/10 rounded-md transition-all"
                                             title="Ask Agent about this ID"
@@ -514,17 +573,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             <Share2 className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <button 
-                                        onClick={() => removeLegalRow(idx)}
-                                        className="p-2 text-slate-400 hover:text-red-500"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                                    {!detail.verified && (
+                                        <button
+                                            onClick={() => removeLegalRow(idx)}
+                                            className="p-2 text-slate-400 hover:text-red-500"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <p className="text-[10px] text-slate-400">Required by local regulations for your business niche.</p>
+                    <p className="text-[10px] text-slate-400">Required by local regulations for your business niche. Formats are auto-verified.</p>
                 </div>
 
                 <div className="h-px bg-slate-100"></div>
@@ -536,7 +597,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <select 
+                            <select
                                 value={newOpLocation}
                                 onChange={(e) => setNewOpLocation(e.target.value)}
                                 className="w-full pl-11 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:border-black appearance-none cursor-pointer"
@@ -546,7 +607,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
-                        <button 
+                        <button
                             onClick={handleAddOperation}
                             disabled={!newOpLocation}
                             className="bg-black text-white px-4 rounded-xl font-bold text-sm hover:bg-slate-800 disabled:opacity-50"
@@ -566,45 +627,138 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                 </div>
             </div>
+
+            <div className="h-px bg-slate-100"></div>
+
+            {/* Danger Zone */}
+            <div className="space-y-4 pt-2">
+                <h3 className="text-xs font-bold text-red-500 uppercase flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5" /> Danger Zone
+                </h3>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <h4 className="text-sm font-bold text-red-900">Delete Account</h4>
+                        <p className="text-xs text-red-700 mt-1">Permanently delete your account and all associated data.</p>
+                    </div>
+                    <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="px-4 py-2 bg-white border border-red-200 text-red-600 font-bold text-xs rounded-lg hover:bg-red-600 hover:text-white transition-colors"
+                    >
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+
+            {/* Conditional footer buttons for Requirement Flow */}
             <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-                {/* Back / Save Logic for Requirement Flow */}
                 {isInRequirementMode && onReturnToBusiness ? (
                     <>
-                        <button 
+                        <button
                             onClick={onReturnToBusiness}
                             className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors"
                         >
-                            Cancel
+                            Back to Dashboard
                         </button>
-                        <button 
-                            onClick={handleSaveAdmin}
-                            className="px-5 py-2.5 bg-[#50C913] hover:bg-[#44ab10] text-black font-bold text-sm rounded-xl transition-all shadow-md active:scale-95"
-                        >
-                            Save & Complete
-                        </button>
+                        {!showSuccessNav && (
+                            <button
+                                onClick={handleSaveAdmin}
+                                className="px-5 py-2.5 bg-[#50C913] hover:bg-[#44ab10] text-black font-bold text-sm rounded-xl transition-all shadow-md active:scale-95"
+                            >
+                                Save & Complete
+                            </button>
+                        )}
                     </>
                 ) : (
                     <button onClick={() => setActiveTab('main')} className="text-sm font-bold text-slate-600 hover:text-black">Back to Settings</button>
                 )}
             </div>
-            {deleteConfirmation && (
-                <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-                    <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 overflow-hidden text-center p-6">
-                        <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-                            <AlertCircle className="w-6 h-6" />
+            {
+                deleteConfirmation && (
+                    <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+                        <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 overflow-hidden text-center p-6">
+                            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Remove Location?</h3>
+                            <p className="text-sm text-slate-500 mb-6">
+                                Are you sure you want to remove <strong>{deleteConfirmation}</strong> from your operation range? This may affect tax compliance tracking.
+                            </p>
+                            <div className="flex gap-3">
+                                <button onClick={() => setDeleteConfirmation(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                                <button onClick={handleDeleteOperation} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600">Remove</button>
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Remove Location?</h3>
-                        <p className="text-sm text-slate-500 mb-6">
-                            Are you sure you want to remove <strong>{deleteConfirmation}</strong> from your operation range? This may affect tax compliance tracking.
-                        </p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setDeleteConfirmation(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-                            <button onClick={handleDeleteOperation} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600">Remove</button>
+                    </div>
+                )
+            }
+
+            {/* Floating Return Button */}
+            {
+                showSuccessNav && isInRequirementMode && onReturnToBusiness && (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
+                        <button
+                            onClick={onReturnToBusiness}
+                            className="bg-black text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl shadow-black/30 hover:scale-105 transition-all flex items-center gap-2 group"
+                        >
+                            <CheckCircle2 className="w-4 h-4 text-[#50C913]" />
+                            Identities Verified - Return to Business
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                )
+            }
+
+            {/* Delete Account Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden transform transition-all h-auto">
+                        <div className="p-6">
+                            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 text-center mb-2">Delete Account?</h3>
+                            <p className="text-sm text-slate-500 text-center mb-6">
+                                This action is permanent and cannot be undone. All your data, including transactions, services, and team members, will be permanently erased.
+                            </p>
+
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
+                                    Type "{userData?.businessName} - {userData?.firstName}" to confirm
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none transition-all font-medium"
+                                    placeholder={`${userData?.businessName} - ${userData?.firstName}`}
+                                    id="delete-confirmation-input"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const input = document.getElementById('delete-confirmation-input') as HTMLInputElement;
+                                        if (input.value === `${userData?.businessName} - ${userData?.firstName}`) {
+                                            handleDeleteAccount();
+                                        } else {
+                                            alert("Confirmation does not match.");
+                                        }
+                                    }}
+                                    className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+                                >
+                                    {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 
     const renderSecuritySettings = () => (
@@ -694,7 +848,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <Building2 className="w-4 h-4" /> Banking & Treasury
                     </h3>
-                    
+
                     {bankConnected ? (
                         <div className="bg-[#50C913]/5 border border-[#50C913]/20 rounded-xl p-4 flex items-center justify-between animate-fade-in">
                             <div className="flex items-center gap-3">
@@ -708,7 +862,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <div className="text-right">
                                 <p className="text-xs font-bold text-[#50C913]">Active</p>
-                                <button onClick={() => { setBankConnected(false); handleUpdate({ hasConnectedBank: false }); }} className="text-[10px] text-red-500 hover:underline mt-1">Disconnect</button>
+                                <button onClick={handleDisconnect} className="text-[10px] text-red-500 hover:underline mt-1">Disconnect</button>
                             </div>
                         </div>
                     ) : (
@@ -718,7 +872,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <h4 className="text-sm font-bold text-slate-900">No bank account connected</h4>
                             <p className="text-xs text-slate-500 mt-1 mb-4 max-w-xs mx-auto">Connect your primary business account to enable real-time cash flow tracking and automated treasury rules.</p>
-                            <button 
+                            <button
                                 onClick={handleBankConnect}
                                 disabled={isConnectingBank}
                                 className="px-5 py-2.5 bg-black text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95 disabled:opacity-70 flex items-center gap-2 mx-auto"
@@ -784,16 +938,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                 </div>
             </div>
-            
+
             {/* Conditional footer buttons for Requirement Flow */}
             <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
                 {isInRequirementMode && onReturnToBusiness ? (
-                    <button 
-                        onClick={onReturnToBusiness}
-                        className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors"
-                    >
-                        Back
-                    </button>
+                    <>
+                        <button
+                            onClick={onReturnToBusiness}
+                            className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors"
+                        >
+                            Back to Dashboard
+                        </button>
+                        {!showSuccessNav && (
+                            <button
+                                onClick={handleSaveAdmin}
+                                className="px-5 py-2.5 bg-[#50C913] hover:bg-[#44ab10] text-black font-bold text-sm rounded-xl transition-all shadow-md active:scale-95"
+                            >
+                                Save & Complete
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <button onClick={() => setActiveTab('main')} className="text-sm font-bold text-slate-600 hover:text-black">Back to Settings</button>
                 )}
@@ -821,7 +985,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <p className="text-slate-500 text-sm mt-1">Manage branding, agent, and administration.</p>
                 </div>
             </div>
-            
+
             {activeTab === 'main' && (
                 <div className="space-y-3">
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Branding & Appearance</h3>
@@ -864,8 +1028,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 {/* Visual cue for missing fields */}
-                                {legalDetails.some(d => !d.value) && (
-                                    <AlertCircle className="w-4 h-4 text-red-500" />
+                                {legalDetails.some(d => !d.verified) && (
+                                    <AlertCircle className="w-4 h-4 text-amber-500" />
                                 )}
                                 <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-black transition-colors" />
                             </div>
@@ -880,7 +1044,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-black transition-colors" />
                         </div>
-                         <div onClick={() => setActiveTab('connectors')} className="p-5 flex items-center justify-between hover:bg-slate-50 cursor-pointer group transition-colors border-b border-slate-100">
+                        <div onClick={() => setActiveTab('connectors')} className="p-5 flex items-center justify-between hover:bg-slate-50 cursor-pointer group transition-colors border-b border-slate-100">
                             <div className="flex items-center gap-4">
                                 <div className="p-2.5 bg-slate-100 text-slate-600 rounded-lg group-hover:bg-[var(--primary-color)]/10 group-hover:text-black transition-colors"><Link2 className="w-5 h-5" /></div>
                                 <div>
@@ -889,7 +1053,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-black transition-colors" />
-                         </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -899,6 +1063,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {activeTab === 'admin' && renderAdminSettings()}
             {activeTab === 'security' && renderSecuritySettings()}
             {activeTab === 'connectors' && renderIntegrationsSettings()}
+
+            {/* Delete Account Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 overflow-hidden text-center p-6">
+                        <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                            <Trash2 className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">Delete your account?</h3>
+                        <p className="text-sm text-slate-500 mb-6">
+                            This action cannot be undone. All your data, including transactions and invoices, will be permanently removed.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 disabled:opacity-70 flex items-center justify-center gap-2"
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

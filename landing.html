@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MahatMedia — We Make Brands Unforgettable</title>
+  <meta name="description" content="MahatMedia is a full-service creative agency specializing in brand design, photography, videography, and digital advertising. We make brands unforgettable." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:          #0a0a0b;
+      --surface:     #111114;
+      --surface-2:   #18181c;
+      --border:      rgba(255,255,255,0.07);
+      --orange:      #f97316;
+      --orange-dim:  #ea6c0a;
+      --orange-glow: rgba(249,115,22,0.18);
+      --white:       #ffffff;
+      --gray-100:    #f5f5f5;
+      --gray-300:    #d4d4d8;
+      --gray-400:    #a1a1aa;
+      --gray-500:    #71717a;
+      --gray-700:    #3f3f46;
+      --font-head:   'Outfit', sans-serif;
+      --font-body:   'Inter', sans-serif;
+      --radius-sm:   6px;
+      --radius:      12px;
+      --radius-lg:   20px;
+      --tr:          0.25s ease;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    img { display: block; max-width: 100%; }
+    a  { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* ═══════════════════════════════════════════
+       UTILITIES
+    ═══════════════════════════════════════════ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .tag {
+      display: inline-block;
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-head);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: none;
+      transition: all var(--tr);
+    }
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--orange-dim);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px var(--orange-glow);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: var(--white);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* ═══════════════════════════════════════════
+       NOISE OVERLAY
+    ═══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ═══════════════════════════════════════════
+       NAVBAR
+    ═══════════════════════════════════════════ */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 0 24px;
+      background: rgba(10,10,11,0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .navbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .navbar-logo {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .navbar-logo span { color: var(--orange); }
+    .navbar-links {
+      display: flex;
+      gap: 36px;
+    }
+    .navbar-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-300);
+      transition: color var(--tr);
+    }
+    .navbar-links a:hover { color: var(--white); }
+    .navbar-right { display: flex; gap: 12px; align-items: center; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--white); margin: 5px 0;
+      transition: all var(--tr);
+      border-radius: 2px;
+    }
+
+    /* ═══════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════ */
+    .hero {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -200px; right: -300px;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .hero-left { max-width: 600px; }
+    .hero-pre {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--orange-glow);
+      border: 1px solid rgba(249,115,22,0.3);
+      border-radius: 40px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--orange);
+      margin-bottom: 28px;
+      font-family: var(--font-head);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .hero-pre::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+    .hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(44px, 6vw, 76px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+    }
+    .hero-title .line-1 { display: block; color: var(--white); }
+    .hero-title .line-2 { display: block; color: var(--white); }
+    .hero-title .accent {
+      color: var(--orange);
+      position: relative;
+    }
+    .hero-title .underline-word {
+      position: relative;
+      display: inline-block;
+    }
+    .hero-title .underline-word::after {
+      content: '';
+      position: absolute;
+      bottom: 4px; left: 0; right: 0;
+      height: 5px;
+      background: var(--orange);
+      border-radius: 2px;
+      animation: growLine 1s ease forwards 0.6s;
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    @keyframes growLine {
+      to { transform: scaleX(1); }
+    }
+    .hero-desc {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--gray-400);
+      margin-bottom: 36px;
+      max-width: 480px;
+    }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    .hero-stat-num {
+      font-family: var(--font-head);
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      line-height: 1;
+    }
+    .hero-stat-num span { color: var(--orange); }
+    .hero-stat-label {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+    .hero-right { position: relative; }
+    .hero-img-wrap {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      aspect-ratio: 4/3;
+    }
+    .hero-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s ease;
+    }
+    .hero-img-wrap:hover img { transform: scale(1.04); }
+    .hero-img-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, transparent 60%);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .hero-badge {
+      position: absolute;
+      bottom: -20px;
+      left: -20px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+    }
+    .hero-badge-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--orange-glow);
+      border: 1px solid rgba(249,115,22,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .hero-badge-text strong {
+      display: block;
+      font-family: var(--font-head);
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .hero-badge-text span {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    /* ═══════════════════════════════════════════
+       ABOUT
+    ═══════════════════════════════════════════ */
+    .about {
+      padding: 100px 0;
+      border-top: 1px solid var(--border);
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .about-img-wrap {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      aspect-ratio: 4/3;
+    }
+    .about-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .about-img-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(10,10,11,0.5) 0%, transparent 50%);
+      z-index: 1;
+    }
+    .about-img-caption {
+      position: absolute;
+      bottom: 20px; left: 20px;
+      z-index: 2;
+      font-size: 13px;
+      color: var(--gray-300);
+      font-family: var(--font-head);
+      font-weight: 500;
+    }
+    .about-content {}
+    .about-title {
+      font-family: var(--font-head);
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+    .about-title .accent { color: var(--orange); }
+    .about-desc {
+      font-size: 15px;
+      color: var(--gray-400);
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SERVICES
+    ═══════════════════════════════════════════ */
+    .services {
+      padding: 100px 0;
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+    .services::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(249,115,22,0.06) 0%, transparent 65%);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .services-left {}
+    .services-title {
+      font-family: var(--font-head);
+      font-size: clamp(36px, 4.5vw, 56px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+    }
+    .services-title .highlight {
+      color: var(--orange);
+      background: linear-gradient(120deg, #f97316 0%, #fb923c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .services-desc {
+      font-size: 15px;
+      color: var(--gray-400);
+      line-height: 1.8;
+      margin-bottom: 40px;
+      max-width: 420px;
+    }
+    .services-cta { display: flex; gap: 14px; }
+    .services-right {}
+    .service-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all var(--tr);
+    }
+    .service-item:first-child { border-top: 1px solid var(--border); }
+    .service-item:hover .service-arrow { transform: translateX(4px); color: var(--orange); }
+    .service-item:hover .service-name { color: var(--orange); }
+    .service-left-part { display: flex; align-items: center; gap: 16px; }
+    .service-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: var(--orange-glow);
+      border: 1px solid rgba(249,115,22,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .service-texts {}
+    .service-name {
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      transition: color var(--tr);
+    }
+    .service-sub {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    .service-arrow {
+      font-size: 20px;
+      color: var(--gray-500);
+      transition: all var(--tr);
+    }
+
+    /* ═══════════════════════════════════════════
+       PORTFOLIO
+    ═══════════════════════════════════════════ */
+    .portfolio {
+      padding: 100px 0;
+    }
+    .portfolio-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 48px;
+    }
+    .portfolio-title {
+      font-family: var(--font-head);
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .portfolio-title .accent { color: var(--orange); }
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 240px;
+      gap: 16px;
+    }
+    .portfolio-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .portfolio-item:nth-child(1) { grid-row: span 2; }
+    .portfolio-item:nth-child(4) { grid-row: span 2; }
+    .portfolio-item:nth-child(6) { grid-row: span 2; }
+    .portfolio-item:nth-child(7) { grid-row: span 2; }
+    .portfolio-item img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s ease;
+    }
+    .portfolio-item:hover img { transform: scale(1.07); }
+    .portfolio-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 55%);
+      opacity: 0;
+      transition: opacity var(--tr);
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+    .portfolio-item:hover .portfolio-overlay { opacity: 1; }
+    .portfolio-item-info {}
+    .portfolio-item-label {
+      font-size: 11px;
+      font-family: var(--font-head);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 4px;
+    }
+    .portfolio-item-name {
+      font-family: var(--font-head);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .portfolio-item-desc {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 4px;
+    }
+    .portfolio-badge {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-family: var(--font-head);
+      font-weight: 600;
+      color: var(--white);
+      opacity: 0;
+      transition: opacity var(--tr);
+    }
+    .portfolio-item:hover .portfolio-badge { opacity: 1; }
+    .portfolio-footer {
+      text-align: center;
+      margin-top: 48px;
+    }
+
+    /* ═══════════════════════════════════════════
+       CTA BANNER
+    ═══════════════════════════════════════════ */
+    .cta-section {
+      padding: 100px 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-bg-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 800px; height: 400px;
+      background: radial-gradient(ellipse, rgba(249,115,22,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .cta-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-title {
+      font-family: var(--font-head);
+      font-size: clamp(36px, 4.5vw, 56px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+    .cta-title .accent { color: var(--orange); }
+    .cta-right {}
+    .cta-desc {
+      font-size: 15px;
+      color: var(--gray-400);
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+    .cta-actions { display: flex; gap: 14px; }
+
+    /* ═══════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════ */
+    .footer {
+      padding: 64px 0 40px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+    .footer-brand {}
+    .footer-logo {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+    .footer-logo span { color: var(--orange); }
+    .footer-brand-desc {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      max-width: 260px;
+    }
+    .footer-col-title {
+      font-family: var(--font-head);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+    }
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .footer-links a {
+      font-size: 14px;
+      color: var(--gray-500);
+      transition: color var(--tr);
+    }
+    .footer-links a:hover { color: var(--orange); }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-copy {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+    .footer-socials { display: flex; gap: 16px; }
+    .social-link {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      color: var(--gray-400);
+      transition: all var(--tr);
+    }
+    .social-link:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: var(--orange-glow);
+    }
+
+    /* ═══════════════════════════════════════════
+       SCROLL ANIMATIONS
+    ═══════════════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.45s; }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .footer-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .footer-brand { grid-column: span 3; }
+    }
+    @media (max-width: 768px) {
+      .navbar-links { display: none; }
+      .navbar-right .btn { display: none; }
+      .hamburger { display: block; }
+      .hero-grid,
+      .about-grid,
+      .services-grid,
+      .cta-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero-right { order: -1; }
+      .hero-badge { bottom: 12px; left: 12px; }
+      .portfolio-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 200px;
+      }
+      .portfolio-item:nth-child(1),
+      .portfolio-item:nth-child(4),
+      .portfolio-item:nth-child(6),
+      .portfolio-item:nth-child(7) { grid-row: span 1; }
+      .portfolio-item:nth-child(1) { grid-row: span 2; }
+      .portfolio-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .footer-brand { grid-column: span 2; }
+      .footer-bottom { flex-direction: column; gap: 20px; }
+      .hero-stats { gap: 24px; }
+    }
+    @media (max-width: 480px) {
+      .portfolio-grid { grid-template-columns: 1fr; }
+      .portfolio-item:nth-child(1),
+      .portfolio-item:nth-child(4),
+      .portfolio-item:nth-child(6),
+      .portfolio-item:nth-child(7) { grid-row: span 1; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: span 1; }
+    }
+
+    /* Mobile menu overlay */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,11,0.97);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-head);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--white);
+      transition: color var(--tr);
+    }
+    .mobile-menu a:hover { color: var(--orange); }
+    .mobile-close {
+      position: absolute;
+      top: 20px; right: 24px;
+      background: none; border: none;
+      font-size: 32px; color: var(--white);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <button class="mobile-close" id="mobileClose" aria-label="Close menu">✕</button>
+    <a href="#hero" onclick="closeMobileMenu()">Home</a>
+    <a href="#about" onclick="closeMobileMenu()">About</a>
+    <a href="#services" onclick="closeMobileMenu()">Services</a>
+    <a href="#portfolio" onclick="closeMobileMenu()">Work</a>
+    <a href="#contact" onclick="closeMobileMenu()">Contact</a>
+  </div>
+
+  <!-- ── NAVBAR ─────────────────────────────── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar-inner">
+      <a href="#hero" class="navbar-logo" id="nav-logo">Mahat<span>Media</span></a>
+      <ul class="navbar-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#portfolio">Work</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="navbar-right">
+        <a href="#contact" class="btn btn-primary">Start a Project</a>
+        <button class="hamburger" id="hamburger" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ───────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <div class="hero-pre">Creative Agency</div>
+          <h1 class="hero-title">
+            <span class="line-1">We Make <span class="accent">Brands</span></span>
+            <span class="line-2"><span class="underline-word">Unforgettable.</span></span>
+          </h1>
+          <p class="hero-desc">
+            We are a full-service creative agency that builds powerful brands. From identity design to cinematic video — we craft experiences that leave a lasting impression.
+          </p>
+          <div class="hero-actions">
+            <a href="#portfolio" class="btn btn-primary" id="hero-cta-work">View Our Work</a>
+            <a href="#contact" class="btn btn-ghost" id="hero-cta-contact">Get in Touch</a>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <div class="hero-stat-num">100<span>+</span></div>
+              <div class="hero-stat-label">Projects</div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-num">100<span>+</span></div>
+              <div class="hero-stat-label">Clients</div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-num">10<span>+</span></div>
+              <div class="hero-stat-label">Years of Excellence</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-right reveal reveal-delay-2">
+          <div class="hero-img-wrap">
+            <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/agency_hero_team_1774881264646.png" alt="MahatMedia creative team in studio" />
+          </div>
+          <div class="hero-badge">
+            <div class="hero-badge-icon">🏆</div>
+            <div class="hero-badge-text">
+              <strong>Award Winning</strong>
+              <span>Creative Agency</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ──────────────────────────────── -->
+  <section class="about" id="about">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-img-wrap reveal">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/agency_about_office_1774881281525.png" alt="MahatMedia creative studio office" />
+          <div class="about-img-caption">Our Creative Studio, Nairobi</div>
+        </div>
+        <div class="about-content">
+          <div class="tag reveal">About Us</div>
+          <h2 class="about-title reveal reveal-delay-1">
+            We are the <span class="accent">creative</span> partner your brand has been waiting for.
+          </h2>
+          <p class="about-desc reveal reveal-delay-2">
+            With over a decade of shaping brand identities, we understand what makes a brand resonate. We blend strategic thinking with bold creativity to produce work that doesn't just look good — it performs. From startups to established enterprises, we've helped hundreds of brands find their voice and make it impossible to ignore.
+          </p>
+          <a href="#services" class="btn btn-primary reveal reveal-delay-3" id="about-discover-btn">Discover More</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SERVICES ───────────────────────────── -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="services-grid">
+        <div class="services-left">
+          <div class="tag reveal">What We Do</div>
+          <h2 class="services-title reveal reveal-delay-1">
+            <span class="highlight">Everything</span> Your<br/>
+            Brand Needs,<br/>
+            Under One Roof.
+          </h2>
+          <p class="services-desc reveal reveal-delay-2">
+            We bring together the best creative minds across every discipline so your brand is never fragmented. One team, one vision, limitless possibilities.
+          </p>
+          <div class="services-cta reveal reveal-delay-3">
+            <a href="#contact" class="btn btn-primary" id="svc-cta-btn">Get a Proposal</a>
+            <a href="#portfolio" class="btn btn-outline" id="svc-work-btn">See Our Work</a>
+          </div>
+        </div>
+        <div class="services-right reveal reveal-delay-2">
+          <div class="service-item" id="svc-brand">
+            <div class="service-left-part">
+              <div class="service-icon">🎨</div>
+              <div class="service-texts">
+                <div class="service-name">Brand Design &amp; Identity</div>
+                <div class="service-sub">Logo, guidelines, visual systems</div>
+              </div>
+            </div>
+            <div class="service-arrow">→</div>
+          </div>
+          <div class="service-item" id="svc-photo">
+            <div class="service-left-part">
+              <div class="service-icon">📷</div>
+              <div class="service-texts">
+                <div class="service-name">Photography</div>
+                <div class="service-sub">Product, fashion, lifestyle &amp; editorial</div>
+              </div>
+            </div>
+            <div class="service-arrow">→</div>
+          </div>
+          <div class="service-item" id="svc-video">
+            <div class="service-left-part">
+              <div class="service-icon">🎬</div>
+              <div class="service-texts">
+                <div class="service-name">Videography &amp; Film</div>
+                <div class="service-sub">Brand films, campaigns &amp; documentaries</div>
+              </div>
+            </div>
+            <div class="service-arrow">→</div>
+          </div>
+          <div class="service-item" id="svc-digital">
+            <div class="service-left-part">
+              <div class="service-icon">📱</div>
+              <div class="service-texts">
+                <div class="service-name">Digital Advertising</div>
+                <div class="service-sub">Social, search, display &amp; strategy</div>
+              </div>
+            </div>
+            <div class="service-arrow">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PORTFOLIO ──────────────────────────── -->
+  <section class="portfolio" id="portfolio">
+    <div class="container">
+      <div class="portfolio-header">
+        <div>
+          <div class="tag">Our Work</div>
+          <h2 class="portfolio-title">
+            Selected <span class="accent">Projects</span>
+          </h2>
+        </div>
+        <a href="#contact" class="btn btn-outline" id="portfolio-view-btn">View All Work</a>
+      </div>
+      <div class="portfolio-grid">
+        <!-- Item 1 (tall) -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_fashion_photo_1774881329531.png" alt="Fashion shoot project" />
+          <div class="portfolio-badge">Photography</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Photography</div>
+              <div class="portfolio-item-name">Urban Fashion Editorial</div>
+              <div class="portfolio-item-desc">Campaign shoot for emerging menswear label</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 2 -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_brand_design_1774881312209.png" alt="Brand identity project" />
+          <div class="portfolio-badge">Branding</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Brand Identity</div>
+              <div class="portfolio-item-name">Aether Brand System</div>
+              <div class="portfolio-item-desc">Full identity &amp; stationery suite</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 3 -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_videography_1774881385617.png" alt="Film production" />
+          <div class="portfolio-badge">Film</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Videography</div>
+              <div class="portfolio-item-name">Cinematic Brand Film</div>
+              <div class="portfolio-item-desc">Behind-the-scenes &amp; hero campaign</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 4 (tall) -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_product_photo_1774881344122.png" alt="Product photography" />
+          <div class="portfolio-badge">Product</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Photography</div>
+              <div class="portfolio-item-name">Luxury Accessories Shoot</div>
+              <div class="portfolio-item-desc">Premium leather goods studio shoot</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 5 -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_designer_card_1774881400916.png" alt="Designer portfolio" />
+          <div class="portfolio-badge">Design</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Graphic Design</div>
+              <div class="portfolio-item-name">Hello, I'm a Designer</div>
+              <div class="portfolio-item-desc">Personal brand &amp; portfolio identity</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 6 (tall) -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/portfolio_interior_1774881417949.png" alt="Interior design photography" />
+          <div class="portfolio-badge">Lifestyle</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Photography</div>
+              <div class="portfolio-item-name">Luxury Interior Shoot</div>
+              <div class="portfolio-item-desc">Architectural &amp; lifestyle photography</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 7 (tall) -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/agency_about_office_1774881281525.png" alt="Agency office" />
+          <div class="portfolio-badge">Agency</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Brand Campaign</div>
+              <div class="portfolio-item-name">Creative Space Rebrand</div>
+              <div class="portfolio-item-desc">Full agency identity overhaul</div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 8 -->
+        <div class="portfolio-item">
+          <img src="/Users/mac/.gemini/antigravity/brain/f894f37b-0f92-4465-abf3-f704c7ddbc13/agency_hero_team_1774881264646.png" alt="Production team" />
+          <div class="portfolio-badge">Film</div>
+          <div class="portfolio-overlay">
+            <div class="portfolio-item-info">
+              <div class="portfolio-item-label">Production</div>
+              <div class="portfolio-item-name">Behind the Lens</div>
+              <div class="portfolio-item-desc">Studio documentary series</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="portfolio-footer reveal">
+        <a href="#contact" class="btn btn-outline" id="portfolio-load-btn">Load More Projects</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────── -->
+  <section class="cta-section" id="contact">
+    <div class="cta-bg-glow"></div>
+    <div class="container">
+      <div class="cta-inner">
+        <div>
+          <div class="tag reveal">Get Started</div>
+          <h2 class="cta-title reveal reveal-delay-1">
+            Ready to Make Your Brand<br/>
+            <span class="accent">Impossible to Ignore?</span>
+          </h2>
+        </div>
+        <div class="cta-right">
+          <p class="cta-desc reveal">
+            Whether you're launching something new or reinventing something existing, we'd love to talk. Tell us your vision and let's build something remarkable together.
+          </p>
+          <div class="cta-actions reveal reveal-delay-1">
+            <a href="mailto:hello@mahatmedia.com" class="btn btn-primary" id="cta-email-btn">Start a Project</a>
+            <a href="tel:+1234567890" class="btn btn-ghost" id="cta-call-btn">Schedule a Call</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ─────────────────────────────── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo">Mahat<span>Media</span></div>
+          <p class="footer-brand-desc">
+            A full-service creative agency crafting unforgettable brands. Strategy, design, film, and digital — all under one roof.
+          </p>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Quick Links</div>
+          <ul class="footer-links">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Services</div>
+          <ul class="footer-links">
+            <li><a href="#services">Brand Design</a></li>
+            <li><a href="#services">Photography</a></li>
+            <li><a href="#services">Videography</a></li>
+            <li><a href="#services">Digital Ads</a></li>
+            <li><a href="#services">Strategy</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Portfolio</div>
+          <ul class="footer-links">
+            <li><a href="#portfolio">Brand Identity</a></li>
+            <li><a href="#portfolio">Photography</a></li>
+            <li><a href="#portfolio">Film &amp; Video</a></li>
+            <li><a href="#portfolio">Digital Campaigns</a></li>
+            <li><a href="#portfolio">Case Studies</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Social</div>
+          <ul class="footer-links">
+            <li><a href="#">Instagram</a></li>
+            <li><a href="#">LinkedIn</a></li>
+            <li><a href="#">Twitter / X</a></li>
+            <li><a href="#">Behance</a></li>
+            <li><a href="#">YouTube</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">© 2026 MahatMedia. All rights reserved.</p>
+        <div class="footer-socials">
+          <a href="#" class="social-link" aria-label="Instagram">📸</a>
+          <a href="#" class="social-link" aria-label="LinkedIn">💼</a>
+          <a href="#" class="social-link" aria-label="Twitter">🐦</a>
+          <a href="#" class="social-link" aria-label="Behance">🎨</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ── SCROLL REVEAL ───────────────────────── */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    /* ── NAVBAR TRANSPARENCY ─────────────────── */
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        navbar.style.background = 'rgba(10,10,11,0.95)';
+      } else {
+        navbar.style.background = 'rgba(10,10,11,0.82)';
+      }
+    });
+
+    /* ── MOBILE MENU ─────────────────────────── */
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileClose = document.getElementById('mobileClose');
+
+    hamburger.addEventListener('click', () => {
+      mobileMenu.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+    mobileClose.addEventListener('click', closeMobileMenu);
+    function closeMobileMenu() {
+      mobileMenu.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    /* ── HERO STATS COUNTER ANIMATION ────────── */
+    function animateCounter(el, target, suffix) {
+      let current = 0;
+      const step = target / 50;
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.querySelector('span').textContent = suffix;
+        el.childNodes[0].textContent = Math.floor(current);
+        if (current >= target) clearInterval(timer);
+      }, 25);
+    }
+
+    const statsObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const nums = document.querySelectorAll('.hero-stat-num');
+          animateCounter(nums[0], 100, '+');
+          animateCounter(nums[1], 100, '+');
+          animateCounter(nums[2], 10, '+');
+          statsObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+
+    const statsSection = document.querySelector('.hero-stats');
+    if (statsSection) statsObserver.observe(statsSection);
+
+    /* ── PORTFOLIO HOVER PARALLAX ────────────── */
+    document.querySelectorAll('.portfolio-item').forEach(item => {
+      item.addEventListener('mousemove', (e) => {
+        const rect = item.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
+        const y = ((e.clientY - rect.top)  / rect.height - 0.5) * 8;
+        item.style.transform = `perspective(600px) rotateY(${x}deg) rotateX(${-y}deg) scale(1.02)`;
+        item.style.transition = 'transform 0.1s ease';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.transform = 'perspective(600px) rotateY(0deg) rotateX(0deg) scale(1)';
+        item.style.transition = 'transform 0.4s ease';
+      });
+    });
+  </script>
+</body>
+</html>

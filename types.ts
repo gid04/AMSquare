@@ -21,18 +21,36 @@ export interface User {
   status: 'active' | 'offline' | 'busy';
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  description: string;
+  type: 'approval' | 'alert' | 'agent' | 'success' | 'info';
+  time: string;
+  read: boolean;
+  actionLabel?: string;
+}
+
 // Extended User type for Team Management
 export interface ManagedUser extends User {
-    email?: string;
-    accessLevel?: 'Admin' | 'Manager' | 'Editor' | 'Viewer';
-    joinedDate?: string;
-    invitationDeadline?: string;
-    residency?: string;
-    // Compensation Data
-    salary?: number;
-    paymentFrequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
-    paymentDate?: string; // e.g., "1st of month", "Friday", "2024-01-01"
-    amsid?: string; // Unique 8-char ID for internal transfers
+  email?: string;
+  accessLevel?: 'Admin' | 'Manager' | 'Editor' | 'Viewer' | 'Investor';
+  joinedDate?: string;
+  invitationDeadline?: string;
+  residency?: string;
+  // Compensation Data
+  salary?: number;
+  paymentFrequency?: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
+  paymentDate?: string; // e.g., "1st of month", "Friday", "2024-01-01"
+  amsid?: string; // Unique 8-char ID for internal transfers
+}
+
+export interface FundingDetails {
+  round: string;
+  amount: number;
+  date: string;
+  source: string;
+  investorCount: number;
 }
 
 export interface UserData {
@@ -46,6 +64,10 @@ export interface UserData {
   operationRange: string[];
   size: string;
   isFreshSignup: boolean;
+  _id?: string;
+  userType?: 'main' | 'staff';
+  accessLevel?: 'Admin' | 'Manager' | 'Editor' | 'Viewer' | 'Investor';
+  mainUserId?: string; // For staff members
   hasConnectedBank?: boolean;
   completedRequirements?: string[]; // Track IDs of completed onboarding tasks
   // New Settings Fields
@@ -56,9 +78,13 @@ export interface UserData {
   agentModel?: string;
   billingAddress?: string;
   primaryAddress?: string;
-  legalDetails?: { label: string; value: string }[];
+  legalDetails?: { label: string; value: string; verified?: boolean }[];
   // Team Data for Regulations
   staffResidencies?: string[];
+  // Business Funding
+  funding?: FundingDetails;
+  // UI State Persistence
+  seenGuides?: string[];
 }
 
 export interface Plan {
@@ -80,6 +106,22 @@ export interface Service {
   frequency?: 'Daily' | 'Monthly' | 'Yearly' | 'One-time' | 'Hourly';
   plans?: Plan[];
   status: 'Active' | 'Archived' | 'Draft';
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: number;
+  status: 'Completed' | 'Pending' | 'Processing' | 'Failed';
+  type: 'debit' | 'credit';
+  isRecurring?: boolean;
+  merchant?: string;
+  paymentMethod?: string;
+  notes?: string;
+  serviceId?: string; // For income linkage
+  location?: string; // Revenue source location
 }
 
 export interface ChatMessage {
@@ -129,3 +171,19 @@ export interface AutomationRule {
   lastRun: string;
   source: 'manual' | 'agent';
 }
+
+export type Permission =
+  | 'manage_staff'
+  | 'edit_business'
+  | 'create_invoice'
+  | 'view_financials'
+  | 'edit_settings'
+  | 'access_analyst';
+
+export const RolePermissions: Record<string, Permission[]> = {
+  Admin: ['manage_staff', 'edit_business', 'create_invoice', 'view_financials', 'edit_settings', 'access_analyst'],
+  Manager: ['manage_staff', 'create_invoice', 'view_financials', 'access_analyst'],
+  Editor: ['create_invoice', 'view_financials', 'access_analyst'],
+  Viewer: ['view_financials'],
+  Investor: ['view_financials'],
+};
